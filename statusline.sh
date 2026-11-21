@@ -65,6 +65,15 @@ fmt_epoch() {  # fmt_epoch VAR epoch strftime [zone]: local time, or the zone if
   fi
   printf -v "$1" '%s' "$out"
 }
+# Directory for display. Home becomes ~ in both spellings (/c/Users/x and
+# C:\Users\x on Windows). Backslashes are doubled because every line is printed
+# with echo -e, which would read a Windows path's "\c" as "stop output" (losing
+# the rest of the line and its newline) and "\t" as a tab.
+display_path() {  # sets DISPLAY_PATH, no subshell
+  local p="${CWD/#$HOME/\~}"
+  [ -n "${USERPROFILE:-}" ] && p="${p/#"$USERPROFILE"/\~}"
+  DISPLAY_PATH="${p//\\/\\\\}"
+}
 
 # ── Theme selection ───────────────────────────────────────────────────────────
 THEME_FILE="$HOME/.claude/statusline_theme"
@@ -477,7 +486,7 @@ if [ "$TMPL" = "replicant" ] || [ "$TMPL" = "breach-protocol" ]; then
     esac
 
     # Line 2: directory (+ branch)
-    DISPLAY_PATH="${CWD/#$HOME/\~}"
+    display_path
     L2="  ${I_DIR}${R} ${T_PATH}${DISPLAY_PATH}${R}"
     if [ -n "$GIT_BRANCH_SUFFIX" ]; then
       BDIRTY=""; { [ "${MOD:-0}" -gt 0 ] || [ "${STG:-0}" -gt 0 ]; } && BDIRTY="${C_ACC}${I_MOD}${R}"
@@ -548,7 +557,7 @@ if [ "$TMPL" = "replicant" ] || [ "$TMPL" = "breach-protocol" ]; then
   echo -e "${C_HOT}▌${R} ${HEAD}  ${DECO}${R}  ${C_MUT}${W_UNIT}${R} ${C_INK}${MODEL}${R}${EFF}  ${C_DIM}cc ${VERSION}${R}${RVIM}"
 
   # Directory + branch
-  DISPLAY_PATH="${CWD/#$HOME/\~}"
+  display_path
   SEC="  ${C_MUT}${W_DIR}${R} ${W_TAG}${C_ACC}${DISPLAY_PATH}${R}"
   if [ -n "$GIT_BRANCH_SUFFIX" ]; then
     RD=""; { [ "${MOD:-0}" -gt 0 ] || [ "${STG:-0}" -gt 0 ]; } && RD="${C_HOT}*${R}"
@@ -621,7 +630,7 @@ case "$TMPL" in
 esac
 
 # Line 2: Directory (+ git branch, if inside a repo)
-DISPLAY_PATH="${CWD/#$HOME/\~}"
+display_path
 echo -e "  ${DIM}📂${R} ${BLUE}${DISPLAY_PATH}${R}${GIT_BRANCH_SUFFIX}"
 
 # Line 3: Context bar
